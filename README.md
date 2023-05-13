@@ -119,3 +119,72 @@ You should see something like this in your terminal.
 ```
 
 Using this data we can get general idea what is wrong and apply appropriate tools.
+
+### dotnet-trace
+
+Below is an abstract of dotnet-trace CLI help
+
+```
+dotnet-trace list-profiles
+        cpu-sampling     - Useful for tracking CPU usage and general .NET runtime information. This is the default option if no profile or providers are specified.
+        gc-verbose       - Tracks GC collections and samples object allocations.
+        gc-collect       - Tracks GC collections only at very low overhead.
+        database         - Captures ADO.NET and Entity Framework database commands
+```
+
+In very general terms dotnet-trace allows tracing CPU usage and memory allocation. 
+More broadly, it can track more if it has EventPipe provider implemented.
+
+Here are commands to run to collect traces of this application:
+
+CPU profile
+```bash
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format Speedscope --profile cpu-sampling --output ./warehouse_cpu_speedcope
+```
+
+Lightweight GC profile
+```bash
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format Speedscope --profile gc-collect --output ./warehouse_gc_collect
+```
+
+Verbose GC profile
+```bash
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format Speedscope --profile gc-verbose --output ./warehouse_gc_verbose
+```
+
+### Speedscope
+
+Open https://www.speedscope.app/
+
+### Chromium
+
+Open Chrome and type `chrome://tracing/`
+
+Collect a new profile
+
+```bash
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format Chromium --profile cpu-sampling --output ./warehouse_cpu_chromium
+```
+
+### PerfView
+
+At this point we're out of cross-platformness of performance profiling and we're back to Windows.
+
+Let's collect nettrace file, understood by PerfView
+```bash
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format NetTrace --profile gc-verbose --output ./warehouse_gc_verbose_nettrace.nettrace
+
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format NetTrace --profile gc-collect --output ./warehouse_gc_collect_nettrace.nettrace
+
+dotnet-trace collect -n Warehouse.Main --duration 00:00:30 --format NetTrace --profile cpu-sampling --output ./warehouse_cpu_nettrace.nettrace
+```
+
+Visit https://github.com/microsoft/perfview and download PerfView.exe from latest release. Make sure it is not in your User directory or below in directory structure.
+
+#### What we'll do with PerfView
+1. View all .nettrace files collected
+1. Collect:
+   1. gc dump
+   1. cpu trace with all shiny details
+1. See things only traces from PerfView (and lttng for that matter) can show:
+   1. on-cpu vs off-cpu analysis (ThreadTime!)
